@@ -1,0 +1,11 @@
+[package]
+name = "oddish"
+version = "0.1.0"
+edition = "2021"
+authors = ["Ettore Delprino <edelprino@gmail.com>"]
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+toml = "0.5"
+octocrab = "0.16"
+tokio = { version = "1", features = ["full"] }
