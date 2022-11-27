@@ -1,7 +1,7 @@
 # Oddish
 
 ```
-every = 5
+every = 5 #seconds
 
 [services.github]
 token = "xxxxx"

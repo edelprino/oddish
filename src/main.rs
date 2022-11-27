@@ -66,7 +66,7 @@ impl Configuration {
                         println!("{}", pr.title.unwrap_or_default());
                         // print statuses url
                         println!("{}", pr.statuses_url.unwrap().to_string());
-                        println!("{}", pr.head_branch);
+                        // println!("{}", pr.head_branch);
                         println!("---------------");
                     }
                 }
