@@ -68,7 +68,7 @@ impl Configuration {
     }
 
     pub async fn check_all_builds(&self, repository: &mut BuildRepository) {
-
+        println!("Checking builds...");
         if let Some(github) = &self.services.github {
             let builds = github.check_all_builds().await;
             for build in builds {
