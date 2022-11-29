@@ -3,6 +3,7 @@ use std::{fs, collections::HashMap};
 use std::process::Command;
 use tokio::time::{sleep, Duration};
 
+
 #[path = "./github.rs"]
 mod github;
 
@@ -67,17 +68,19 @@ impl Configuration {
     }
 
     pub async fn check_all_builds(&self, repository: &mut BuildRepository) {
-        // let notify = self.command.replace("{message}", "Hello, world!");
-        // let args = notify.split_whitespace().into_iter().map(|s| s.to_string()).collect::<Vec<String>>();
-        // let status = Command::new(args[0].clone()).args(&args[1..]).status().unwrap();
-        // println!("process finished with: {status}");
 
         if let Some(github) = &self.services.github {
             let builds = github.check_all_builds().await;
             for build in builds {
                 repository.get(&build.id).map(|b| {
                     if b.state != build.state {
-                        println!("Build {} changed state from {:?} to {:?}", b.id, b.state, build.state);
+                        let message = format!("Build {} changed state from {:?} to {:?}", b.id, b.state, build.state);
+                        println!("Running command: {}", self.command);
+                        println!("Commit: {}", build.commit);
+                        println!("Branch: {}", build.branch);
+                        let notify = self.command.replace("{message}", &message);
+                        let status = Command::new("bash").arg("-c").arg(notify).status().unwrap();
+                        println!("process finished with: {status}");
                     }
                 });
                 repository.add(build);
