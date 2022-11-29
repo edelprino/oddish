@@ -21,6 +21,7 @@ impl GithubService {
                 .send()
                 .await
                 .unwrap();
+
             for run in runs {
                 let state = match run.conclusion.unwrap_or("".to_string()).as_str() {
                     "success" => super::BuildState::Success,

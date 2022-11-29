@@ -71,17 +71,17 @@ impl Configuration {
     pub async fn check_all_builds(&self, repository: &mut BuildRepository) {
         println!("Checking builds...");
         if let Some(github) = &self.services.github {
+
             let builds = github.check_all_builds().await;
+
             for build in builds {
                 repository.get(&build.id).map(|b| {
                     if b.state != build.state {
-                        let message = format!("Build {} changed state from {:?} to {:?}", b.id, b.state, build.state);
-                        println!("Running command: {}", self.command);
-                        println!("Commit: {}", build.commit);
-                        println!("Branch: {}", build.branch);
+                        let message = format!("Build for {} changed state from {:?} to {:?}, commit \"{:?}\"", b.repository, b.state, build.state, build.commit);
                         let notify = self.command.replace("{message}", &message);
+                        println!("Running command: {}", notify);
                         let status = Command::new("bash").arg("-c").arg(notify).status().unwrap();
-                        println!("process finished with: {status}");
+                        println!("Process finished with: {status}");
                     }
                 });
                 repository.add(build);
