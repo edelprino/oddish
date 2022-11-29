@@ -77,8 +77,8 @@ impl Configuration {
             for build in builds {
                 repository.get(&build.id).map(|b| {
                     if b.state != build.state {
-                        let message = format!("Build for {} changed state from {:?} to {:?}, commit \"{:?}\"", b.repository, b.state, build.state, build.commit);
-                        let notify = self.command.replace("{message}", &message);
+                        let message = format!("Build for {} changed state from {:?} to {:?}, commit {:?}", b.repository, b.state, build.state, build.commit);
+                        let notify = self.command.replace("{message}", &message).replace("{link}", &format!("https://github.com/{}/actions/runs/{}", b.repository, b.id));
                         println!("Running command: {}", notify);
                         let status = Command::new("bash").arg("-c").arg(notify).status().unwrap();
                         println!("Process finished with: {status}");
