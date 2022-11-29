@@ -1,84 +1,68 @@
 use serde::{Deserialize};
-use std::fs;
-use octocrab::Octocrab;
+use std::{fs, collections::HashMap};
+mod github;
+use std::process::Command;
 
 #[derive(Deserialize)]
 struct Configuration {
     services: Services,
+    command: String,
 }
 
 #[derive(Deserialize)]
 struct Services {
-    github: Option<GithubService>,
+    github: Option<github::GithubService>,
 }
 
-#[derive(Deserialize)]
-struct GithubService {
-    token: String,
-    username: String,
-    repositories: Vec<String>,
+#[derive(Debug)]
+enum BuildState {
+    Success,
+    Failure,
+    Pending,
 }
+
+#[derive(Debug)]
+pub struct Build {
+    id: String,
+    commit: String,
+    state: BuildState,
+    branch: String,
+    repository: String,
+}
+
+impl Build {
+    fn new(id: String, commit: String, state: BuildState, branch: String, repository: String) -> Build {
+        Build { id, commit, state, branch, repository}
+    }
+}
+
+pub type State = HashMap<String, String>;
 
 impl Configuration {
+
     fn from_file() -> Result<Self, std::io::Error> {
         fs::read_to_string("./.oddish.toml")
             .and_then(|s| toml::from_str(&s).map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e)))
     }
 
-    async fn check_all_pull_requests(self) {
+    async fn check_all_builds(self, _state: &mut State) {
+        let notify = self.command.replace("{message}", "Hello, world!");
+        let args = notify.split_whitespace().into_iter().map(|s| s.to_string()).collect::<Vec<String>>();
+        let status = Command::new(args[0].clone()).args(&args[1..]).status().unwrap();
+        println!("process finished with: {status}");
 
         if let Some(github) = &self.services.github {
-            println!("Checking github pull requests");
-
-            let octocrab = Octocrab::builder().personal_token(github.token.clone()).build().unwrap();
-
-            for repository in &github.repositories {
-
-                let (owner, repo) = repository.split_once('/').unwrap();
-
-                let prs = octocrab.pulls(owner, repo)
-                    .list()
-                    .state(octocrab::params::State::Open)
-                    .send()
-                    .await
-                    .unwrap();
-
-                let runs = octocrab.workflows(owner, repo)
-                    .list_all_runs()
-                    .actor(github.username.clone())
-                    .per_page(2)
-                    .send()
-                    .await
-                    .unwrap();
-
-                for run in runs {
-                    println!("{:?}", run.id);
-                    println!("{:?}", run.status);
-                    println!("{:?}", run.conclusion);
-                    println!("{:?}", run.head_branch);
-                    println!("{:?}", run);
-                    println!("---------------");
-                }
-
-                for pr in prs {
-                    let author = pr.user.unwrap().login.to_string();
-                    if author == github.username {
-                        println!("{}", pr.title.unwrap_or_default());
-                        // print statuses url
-                        println!("{}", pr.statuses_url.unwrap().to_string());
-                        // println!("{}", pr.head_branch);
-                        println!("---------------");
-                    }
-                }
+            let builds = github.check_all_builds().await;
+            for build in builds {
+                println!("{:?}", build);
             }
-
-
         }
     }
 }
 
 #[tokio::main]
 async fn main() {
+    let mut state = State::new();
     let config = Configuration::from_file().unwrap();
-    config.check_all_pull_requests().await;
+    config.check_all_builds(&mut state).await;
 }
