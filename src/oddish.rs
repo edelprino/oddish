@@ -2,7 +2,7 @@ use serde::{Deserialize};
 use std::{fs, collections::HashMap};
 use std::process::Command;
 use tokio::time::{sleep, Duration};
-
+use std::env;
 
 #[path = "./github.rs"]
 mod github;
@@ -63,7 +63,8 @@ impl BuildRepository {
 impl Configuration {
 
     pub fn from_file() -> Result<Self, std::io::Error> {
-        fs::read_to_string("./.oddish.toml")
+        let home = env::var_os("HOME").unwrap().into_string().unwrap();
+        fs::read_to_string(home + "/.oddish.toml")
             .and_then(|s| toml::from_str(&s).map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e)))
     }
 
